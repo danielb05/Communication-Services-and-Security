@@ -38,7 +38,7 @@ def SendRetransBuffer():
         datagram='0-'+str(num)
         del RetransBuffer[0]
         time.sleep(t_time)
-        s.sendto(datagram,(HOST,PORT))
+        s.sendto(datagram.encode(),(HOST,PORT))
         Trace('sent retrans: '+datagram)
 
 
@@ -61,14 +61,14 @@ def SendBuffer():
         datagram=error+'-'+str(num)   #   Segment:  errorindicator-seqnum
         time.sleep(t_time)
         LastSent=num
-        s.sendto(datagram,(HOST,PORT))
+        s.sendto(datagram.encode(),(HOST,PORT))
         Trace('sent: '+datagram)
         t = threading.Thread(target=TimeOut, args=(num,))   
         t.start()
 
 def Trace(mess):
     t=time.time()-start_time
-    print t,'|',"'"+mess+"'"
+    print(t,'|',"'"+mess+"'")
 
 
 random.seed(0)

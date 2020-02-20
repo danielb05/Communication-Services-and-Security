@@ -6,7 +6,7 @@ from time import sleep
 def SendAck(ne):
     sleep(t_toack)
     s.sendto('ACK-'+str(ne),(HOST,PORTACK))
-    print "SENT ACK ",ne 
+    print ("SENT ACK ",ne) 
 
 
 
