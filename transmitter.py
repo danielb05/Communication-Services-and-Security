@@ -11,7 +11,7 @@ PORTACK = 50008
 LastSent=-1
 LastAck=-1
 TO=5.
-LimitTime=20.
+LimitTime=200.
 Buffer=[]
 RetransBuffer=[]
 errorrate=0.3
@@ -22,10 +22,21 @@ s2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 t_time=1.0
 s2.bind((HOST,PORTACK))
 
+def isPrime(number):
+    if number > 1:
+        for i in range(2, number):
+            if (number % i) == 0:
+                return False
+                break
+        else:
+            return True
+    return False
+
 def ProcessAck():
     global Buffer,LastAck
     while 1:
         data,addr = s2.recvfrom(1024)
+        data = data.decode('ascii')
         num=int(data.split('-')[1])-1
 
         if num==(LastAck+1):
@@ -41,7 +52,6 @@ def SendRetransBuffer():
         s.sendto(datagram.encode(),(HOST,PORT))
         Trace('sent retrans: '+datagram)
 
-
 def TimeOut(num):
     global RetransBuffer,LastAck
     time.sleep(TO)
@@ -56,8 +66,9 @@ def SendBuffer():
         num=Buffer[0]
         del Buffer[0]       
         error='0'
-        if random.random()<errorrate:
+        if isPrime(num):
             error='1'
+            print("Datagram", num, "lost")
         datagram=error+'-'+str(num)   #   Segment:  errorindicator-seqnum
         time.sleep(t_time)
         LastSent=num

@@ -5,7 +5,8 @@ from time import sleep
 
 def SendAck(ne):
     sleep(t_toack)
-    s.sendto('ACK-'+str(ne),(HOST,PORTACK))
+    datagram='ACK-'+str(ne)
+    s.sendto(datagram.encode(),(HOST,PORTACK))
     print ("SENT ACK ",ne) 
 
 
@@ -24,6 +25,7 @@ NextExpected=0
 
 while 1:
     data,addr = s.recvfrom(1024)
+    data = data.decode('ascii')
     error=int(data.split("-")[0])
     num=int(data.split("-")[1])
     if error==0:
