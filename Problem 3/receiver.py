@@ -18,8 +18,8 @@ sockt.bind((HOST, PORT))
 
 time_to_ack = 2
 
-Buffer = []
-NextExpected = 0
+buffer = []
+nextExpected = 0
 
 while 1:
     data, addr = sockt.recvfrom(1024)
@@ -27,6 +27,7 @@ while 1:
     error = int(data.split("-")[0])
     num = int(data.split("-")[1])
     if error == 0:
-        if num == NextExpected:
-            SendAck(NextExpected+1)
-            NextExpected += 1
+        buffer.append(num)
+        if num == nextExpected:
+            SendAck(nextExpected+1)
+            nextExpected += 1

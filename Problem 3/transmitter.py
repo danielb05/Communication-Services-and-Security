@@ -1,6 +1,5 @@
 import socket
 import time
-import random
 import threading
 
 
@@ -8,19 +7,24 @@ HOST = 'localhost'
 PORT = 50007
 PORTACK = 50008
 
+sockt = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sockt2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sockt2.bind((HOST, PORTACK))
+
+transmition_time = 1.
 LastSent = -1
 LastAck = -1
-TO = 5.
+TimeOut = 10.
 LimitTime = 200.
 Buffer = []
 RetransBuffer = []
 errorrate = 0.3
-
-
-sockt = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sockt2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-t_time = 1.0
-sockt2.bind((HOST, PORTACK))
+alpha = 0.8
+cwmax = 4
+cwini = 1
+cwnd = cwini
+effectiveWindow = cwnd
+# rtt = 5
 
 
 def isPrime(number):
@@ -51,14 +55,14 @@ def SendRetransBuffer():
         num = RetransBuffer[0]
         datagram = '0-'+str(num)
         del RetransBuffer[0]
-        time.sleep(t_time)
+        time.sleep(transmition_time)
         sockt.sendto(datagram.encode(), (HOST, PORT))
         Trace('sent retrans: '+datagram)
 
 
 def TimeOut(num):
     global RetransBuffer, LastAck
-    time.sleep(TO)
+    time.sleep(TimeOut)
     if num >= LastAck:
         RetransBuffer.append(num)
         Trace("TimeOut "+str(num))
@@ -75,7 +79,7 @@ def SendBuffer():
             error = '1'
             print("Datagram", num, "lost")
         datagram = error+'-'+str(num)  # Segment:  errorindicator-seqnum
-        time.sleep(t_time)
+        time.sleep(transmition_time)
         LastSent = num
         sockt.sendto(datagram.encode(), (HOST, PORT))
         Trace('sent: '+datagram)
@@ -86,9 +90,6 @@ def SendBuffer():
 def Trace(mess):
     t = time.time()-start_time
     print(t, '|', "'"+mess+"'")
-
-
-random.seed(0)
 
 x = threading.Thread(target=ProcessAck)
 x.start()
