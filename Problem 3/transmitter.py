@@ -1,6 +1,8 @@
 import socket
 import time
 import threading
+import csv
+import utils as u
 
 
 HOST = 'localhost'
@@ -14,7 +16,7 @@ sockt2.bind((HOST, PORTACK))
 transmition_time = 1.
 LastSent = -1
 LastAck = -1
-TimeOut = 10.
+TOut = 10
 LimitTime = 200.
 Buffer = []
 RetransBuffer = []
@@ -24,18 +26,12 @@ cwmax = 4
 cwini = 1
 cwnd = cwini
 effectiveWindow = cwnd
-# rtt = 5
-
-
-def isPrime(number):
-    if number > 1:
-        for i in range(2, number):
-            if (number % i) == 0:
-                return False
-                break
-        else:
-            return True
-    return False
+rtt = 11
+srtt = 11
+srtt = u.updatesRTT(alpha, srtt, rtt)
+MSS = 1
+currentTime = time.time()
+start_time = time.time()
 
 
 def ProcessAck():
@@ -46,26 +42,45 @@ def ProcessAck():
         num = int(data.split('-')[1])-1
 
         if num == (LastAck+1):
-            Trace("ACK received"+data)
-            LastAck = num
+            updateValeus()
+            log = "ACK " + str(num) + " received"
+            u.logData((time.time() - start_time), log, effectiveWindow, cwnd, rtt, srtt, TOut)
+            Trace("ACK received " + data)
 
+def updateValeus():
+
+    global cwnd, cwmax, MSS
+
+    if(cwnd < cwmax):
+        cwnd += MSS
+    else:
+        cwnd += MSS/cwnd
+        cwmax = min(cwmax, cwnd)
 
 def SendRetransBuffer():
+    global TOut
     while len(RetransBuffer) > 0:
+        TOut *= 2
         num = RetransBuffer[0]
         datagram = '0-'+str(num)
         del RetransBuffer[0]
         time.sleep(transmition_time)
         sockt.sendto(datagram.encode(), (HOST, PORT))
-        Trace('sent retrans: '+datagram)
+        log = 'Sent Retrans: ' + str(num)
+        u.logData((time.time() - start_time), log, effectiveWindow, cwnd, rtt, srtt, TOut)
+        Trace('Sent Retrans: ' + datagram)
 
 
 def TimeOut(num):
-    global RetransBuffer, LastAck
-    time.sleep(TimeOut)
+    global RetransBuffer, LastAck, cwnd, cwini, cwmax
+    time.sleep(TOut)
+    cwnd = cwini
+    cwmax = max(cwini, (cwmax/2))
     if num >= LastAck:
         RetransBuffer.append(num)
-        Trace("TimeOut "+str(num))
+        log = "TimeOut: " + str(num)
+        u.logData((time.time() - start_time), log, effectiveWindow, cwnd, rtt, srtt, TOut)
+        Trace(log)
         SendRetransBuffer()
 
 
@@ -75,21 +90,28 @@ def SendBuffer():
         num = Buffer[0]
         del Buffer[0]
         error = '0'
-        if isPrime(num):
+        if u.isPrime(num):
             error = '1'
-            print("Datagram", num, "lost")
+            log = "Datagram " + str(num) + " lost"
+            u.logData((time.time() - start_time), log, effectiveWindow, cwnd, rtt, srtt, TOut)
+            print(log)
         datagram = error+'-'+str(num)  # Segment:  errorindicator-seqnum
         time.sleep(transmition_time)
         LastSent = num
         sockt.sendto(datagram.encode(), (HOST, PORT))
-        Trace('sent: '+datagram)
+        log = 'Datagram ' + str(num) + ' sent'
+        u.logData((time.time() - start_time), log, effectiveWindow, cwnd, rtt, srtt, TOut)
+        Trace('Sent: ' + datagram)
         t = threading.Thread(target=TimeOut, args=(num,))
         t.start()
 
 
 def Trace(mess):
-    t = time.time()-start_time
-    print(t, '|', "'"+mess+"'")
+    global currentTime
+    currentTime = time.time()-start_time
+    print(currentTime, '|', "'"+mess+"'")
+
+u.createLogFile()
 
 x = threading.Thread(target=ProcessAck)
 x.start()

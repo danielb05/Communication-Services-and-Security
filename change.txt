@@ -1,0 +1,5 @@
+Receiver
+{ Send ACK after 2 s. without a correct reception
+
+Mss = 1 (always)
+alpha also dont change
