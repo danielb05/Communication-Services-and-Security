@@ -4,8 +4,8 @@ import threading
 from collections import deque
 
 
-HOST = 'localhost'                 # Symbolic name meaning all available interfaces
-PORT = 50007              # Arbitrary non-privileged port
+HOST = 'localhost'
+PORT = 50007
 PORTACK = 50008
 
 sockt = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -13,41 +13,56 @@ sockt.bind((HOST, PORT))
 
 time_to_ack = 2
 
-packagesBuffer = []
-timesBuffer = []
+Buffer = []
 nextExpected = 0
+lastReceived = -1
+lastInsertedInBuffer = -1
+
+start_time = time.time()
+last_received_time = 0
 
 
 def ReceivePackages():
+    global last_received_time, start_time
     while 1:
         data, addr = sockt.recvfrom(1024)
+        last_received_time = start_time - time.time()
         t3 = threading.Thread(target=manageIncomming(data))
         t3.start()
 
 
 def manageIncomming(data):
-    global packagesBuffer, timesBuffer
+    global Buffer, nextExpected, lastInsertedInBuffer
+    
     data = data.decode('ascii')
     error = int(data.split("-")[0])
     num = int(data.split("-")[1])
-    if (error == 0 and len(packagesBuffer) <= 20):
-        packagesBuffer.append(num)
-        timesBuffer.append(time.time())
+
+    if (error == 0 and (lastInsertedInBuffer+1) == num):
+
+        if(len(Buffer) < 21):
+            Buffer.append({'num':num, 'time_received':time.time()})
+            lastInsertedInBuffer = num
 
 
 def ManageBuffer():
-    global packagesBuffer, timesBuffer
+    global Buffer, last_received_time, nextExpected
+    
     while 1:
-        if (len(packagesBuffer) >= 3):
-            package = packagesBuffer[2]
-            packagesBuffer = packagesBuffer[3:]
-            timesBuffer = timesBuffer[3:]
-            SendAck(package)
-        elif (len(timesBuffer) > 0 and timesBuffer[0] - time.time() > 2):
-            package = packagesBuffer[0]
-            packagesBuffer = packagesBuffer[1:]
-            timesBuffer = timesBuffer[1:]
-            SendAck(package)
+        if (len(Buffer) >= 3):
+            package = Buffer[len(Buffer)-1]
+            Buffer = Buffer[3:]
+            nextExpected = package['num']+1
+            SendAck(nextExpected)
+            
+        elif (len(Buffer) > 0):
+            package = Buffer[0]
+            time_received = package['time_received']
+            x = time.time() - time_received
+            if(x > 2):            
+                Buffer = Buffer[1:]
+                nextExpected = package['num']+1
+                SendAck(nextExpected)
 
 
 def SendAck(ne):
@@ -60,5 +75,9 @@ def SendAck(ne):
 t1 = threading.Thread(target=ReceivePackages)
 t1.start()
 
-t2 = threading.Thread(target=ManageBuffer())
-t2.start()
+# ReceivePackages()
+
+# t2 = threading.Thread(target=ManageBuffer())
+# t2.start()
+
+ManageBuffer()
