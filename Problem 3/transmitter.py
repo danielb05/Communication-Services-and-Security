@@ -14,24 +14,29 @@ sockt2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sockt2.bind((HOST, PORTACK))
 
 transmition_time = 1.
+MSS = 1
+alpha = 0.8
+LimitTime = 200
+
 LastSent = -1
 LastAck = -1
 TOut = 10
-LimitTime = 200.
+
 Buffer = []
 RetransBuffer = []
-errorrate = 0.3
-alpha = 0.8
+
 cwmax = 4
 cwini = 1
 cwnd = cwini
 effectiveWindow = cwnd
 rtt = 11
-srtt = 11
+srtt = rtt
 srtt = u.updatesRTT(alpha, srtt, rtt)
-MSS = 1
+
 currentTime = time.time()
 start_time = time.time()
+
+packagesList = []
 
 
 def ProcessAck():
@@ -42,20 +47,30 @@ def ProcessAck():
         num = int(data.split('-')[1])-1
 
         if num == (LastAck+1):
-            updateValeus()
+            receivedTime = (time.time() - start_time)
+            t3 = threading.Thread(target=updateValeus(num, receivedTime))
+            t3.start()
+            # updateValeus(num, receivedTime)
             log = "ACK " + str(num) + " received"
-            u.logData((time.time() - start_time), log, effectiveWindow, cwnd, rtt, srtt, TOut)
+            u.logData(receivedTime, log, effectiveWindow, cwnd, rtt, srtt, TOut)
             Trace("ACK received " + data)
 
-def updateValeus():
+def updateValeus(ack_num, receivedTime):
 
-    global cwnd, cwmax, MSS
+    global cwnd, cwmax, MSS, packagesList, rtt, srtt
+
+    for item in packagesList:
+        if item['num'] == ack_num:
+            rtt = receivedTime - item['transmition_time']
+
+    srtt = u.updatesRTT(alpha, srtt, rtt)
 
     if(cwnd < cwmax):
         cwnd += MSS
     else:
         cwnd += MSS/cwnd
         cwmax = min(cwmax, cwnd)
+
 
 def SendRetransBuffer():
     global TOut
@@ -85,7 +100,7 @@ def TimeOut(num):
 
 
 def SendBuffer():
-    global Buffer, LastSent
+    global Buffer, LastSent, packagesList
     while len(Buffer) > 0:
         num = Buffer[0]
         del Buffer[0]
@@ -99,11 +114,15 @@ def SendBuffer():
         time.sleep(transmition_time)
         LastSent = num
         sockt.sendto(datagram.encode(), (HOST, PORT))
+
+        sentAt = (time.time() - start_time)
+        packagesList.append({'num':num,'transmition_time':sentAt})
+
         log = 'Datagram ' + str(num) + ' sent'
-        u.logData((time.time() - start_time), log, effectiveWindow, cwnd, rtt, srtt, TOut)
+        u.logData(sentAt, log, effectiveWindow, cwnd, rtt, srtt, TOut)
         Trace('Sent: ' + datagram)
-        t = threading.Thread(target=TimeOut, args=(num,))
-        t.start()
+        t2 = threading.Thread(target=TimeOut, args=(num,))
+        t2.start()
 
 
 def Trace(mess):
@@ -113,8 +132,8 @@ def Trace(mess):
 
 u.createLogFile()
 
-x = threading.Thread(target=ProcessAck)
-x.start()
+t1 = threading.Thread(target=ProcessAck)
+t1.start()
 
 for i in range(30):
     Buffer.append(i)

@@ -15,7 +15,7 @@ def logData(t, log, effectiveWindow, cwnd, rtt, srtt, TOut):
         row += "|" + log
         row += "|" + str(effectiveWindow)
         row += "|" + str(cwnd)
-        row += "|" + str(rtt)
+        row += "|" + ("%.2f" % rtt)
         row += "|" + ("%.2f" % srtt) 
         row += "|" + str(TOut)
         row += "\n"

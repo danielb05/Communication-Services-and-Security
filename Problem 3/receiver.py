@@ -30,9 +30,9 @@ def manageIncomming(data):
     data = data.decode('ascii')
     error = int(data.split("-")[0])
     num = int(data.split("-")[1])
-    if error == 0:
-            packagesBuffer.append(num)
-            timesBuffer.append(time.time())
+    if (error == 0 and len(packagesBuffer) <= 20):
+        packagesBuffer.append(num)
+        timesBuffer.append(time.time())
 
 
 def ManageBuffer():
