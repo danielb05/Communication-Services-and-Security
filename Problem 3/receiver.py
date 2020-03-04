@@ -16,7 +16,7 @@ time_to_ack = 2
 Buffer = []
 BufferList = []
 nextExpected = 0
-lastReceived = -1
+lastCorrectlyReceived = time.time()
 lastInsertedInBuffer = -1
 
 start_time = time.time()
@@ -42,32 +42,31 @@ def manageIncomming(data):
     if (error == 0 and num >= nextExpected):
 
         if(len(Buffer) < 21):
-            Buffer.append({'num': num, 'time_received': time.time()})
-            BufferList.append(num)
-            BufferList.sort()
+            lastCorrectlyReceived = time.time()
+            Buffer.append(num)
+            Buffer.sort()
             lastInsertedInBuffer = num
+        else:
+            print (Buffer)
 
 
 def ManageBuffer():
     global Buffer, last_received_time, nextExpected
 
     while 1:
-        if (len(Buffer) >= 3 and BufferList[0] == nextExpected):
+        if (len(Buffer) >= 3 and Buffer[0] == nextExpected):
             package = Buffer[len(Buffer)-1]
-            Buffer = Buffer[3:]
-            BufferList =
-            nextExpected = package['num']+1
+            Buffer = Buffer[len(Buffer):]
+            nextExpected = package + 1
             SendAck(nextExpected)
 
-        elif (len(Buffer) > 0):
+        elif (len(Buffer) > 0 and (time.time() - lastCorrectlyReceived) > 2):
             package = Buffer[0]
-            if(package['num'] == nextExpected):
-                time_received = package['time_received']
-                x = time.time() - time_received
-                if(x > 2):
-                    Buffer = Buffer[1:]
-                    nextExpected = package['num']+1
-                    SendAck(nextExpected)
+            if(package == nextExpected):
+                Buffer = Buffer[1:]
+                nextExpected = package + 1
+                SendAck(nextExpected)
+                    
 
 
 def SendAck(ne):
