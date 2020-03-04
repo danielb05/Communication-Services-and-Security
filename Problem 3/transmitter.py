@@ -6,7 +6,7 @@ import utils as u
 
 HOST = 'localhost'
 PORT = 50007
-PORTACK = 50008
+PORTACK = 50006
 
 sockt = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sockt2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -36,10 +36,11 @@ currentTime = time.time()
 start_time = time.time()
 
 packagesList = []
+pack_num = 0
 
 
 def ProcessAck():
-    global Buffer, LastAck
+    global Buffer
     while 1:
         data, addr = sockt2.recvfrom(1024)
         data = data.decode('ascii')
@@ -52,11 +53,11 @@ def ProcessAck():
         log = "ACK " + str(num) + " received"
         u.logData(receivedTime, log, effectiveWindow, cwnd, rtt, srtt, TOut)
         Trace("ACK received " + data)
-            
+
 
 def updateValeus(ack_num, receivedTime):
 
-    global cwnd, cwmax, MSS, packagesList, rtt, srtt, TOut
+    global cwnd, cwmax, MSS, packagesList, rtt, srtt, TOut, effectiveWindow, LastAck
 
     for item in packagesList:
         if item['num'] == ack_num:
@@ -69,8 +70,10 @@ def updateValeus(ack_num, receivedTime):
     else:
         cwnd += MSS/cwnd
         cwmax = min(cwmax, cwnd)
-    
-    TOut = 2 * srtt 
+
+    TOut = 2 * srtt
+    LastAck = ack_num
+    effectiveWindow = u.calculateEffectiveWindow(cwnd, LastSent, LastAck)
 
 
 def SendRetransBuffer():
@@ -78,64 +81,96 @@ def SendRetransBuffer():
     while len(RetransBuffer) > 0:
         # Send a packet only if the efective window is larger than 0
         if effectiveWindow < 0:
-            log = 'Negative Effective Window'
-            Trace(log)
-            u.logData((time.time() - start_time), log, effectiveWindow, cwnd, rtt, srtt, TOut)
+            log = 'Negative Effective Window Retrans'
+            # Trace(log)
+            # u.logData((time.time() - start_time), log,
+            #           effectiveWindow, cwnd, rtt, srtt, TOut)
         else:
-            TOut *= 2
             num = RetransBuffer[0]
             datagram = '0-'+str(num)
             del RetransBuffer[0]
             time.sleep(transmition_time)
             sockt.sendto(datagram.encode(), (HOST, PORT))
+
+            sentAt = (time.time() - start_time)
+            packagesList.append({'num': num, 'transmition_time': sentAt})
+
+            # When a package is retransmitted, the timeout doubles
+            TOut *= 2
             log = 'Sent Retrans: ' + str(num)
-            u.logData((time.time() - start_time), log, effectiveWindow, cwnd, rtt, srtt, TOut)
+            u.logData((time.time() - start_time), log,
+                      effectiveWindow, cwnd, rtt, srtt, TOut)
             Trace('Sent Retrans: ' + datagram)
 
 
 def TimeOut(num):
     global RetransBuffer, LastAck, cwnd, cwini, cwmax
     time.sleep(TOut)
-    cwnd = cwini
-    cwmax = max(cwini, (cwmax/2))
     if num >= LastAck:
+        cwnd = cwini
+        cwmax = max(cwini, (cwmax/2))
+
         RetransBuffer.append(num)
         log = "TimeOut: " + str(num)
-        u.logData((time.time() - start_time), log, effectiveWindow, cwnd, rtt, srtt, TOut)
+        u.logData((time.time() - start_time), log,
+                  effectiveWindow, cwnd, rtt, srtt, TOut)
         Trace(log)
         SendRetransBuffer()
 
 
+def sendPackage():
+    global Buffer, LastSent, LastAck, packagesList
+
+    while 1:
+        if len(Buffer) > 0:
+
+            # Send a packet only if the efective window is larger than 0
+            if effectiveWindow < 0:
+                log = 'Negative Effective Window'
+                # Trace(log)
+                # u.logData((time.time() - start_time), log,
+                #           effectiveWindow, cwnd, rtt, srtt, TOut)
+
+            elif (LastSent - LastAck) <= effectiveWindow:
+                num = Buffer[0]
+                del Buffer[0]
+                error = '0'
+                errorlog = ''
+                if u.isPrime(num):
+                    error = '1'
+                    errorlog = "Datagram " + str(num) + " lost"
+                # Segment:  errorindicator-seqnum
+                datagram = error+'-'+str(num)
+                time.sleep(transmition_time)
+                LastSent = num
+                sockt.sendto(datagram.encode(), (HOST, PORT))
+
+                sentAt = (time.time() - start_time)
+                packagesList.append({'num': num, 'transmition_time': sentAt})
+
+                log = 'Datagram ' + str(num) + ' sent'
+                u.logData(sentAt, log, effectiveWindow, cwnd, rtt, srtt, TOut)
+                Trace('Sent: ' + datagram)
+
+                if errorlog != '':
+                    u.logData((time.time() - start_time), errorlog,
+                              effectiveWindow, cwnd, rtt, srtt, TOut)
+                    print(errorlog)
+
+                t2 = threading.Thread(target=TimeOut, args=(
+                    num,), name="Thread-pck-"+str(num))
+                t2.start()
+
+            else:
+                log = ("Exeeds effectiveWindow")
+                LastSent, LastAck, effectiveWindow
+
+
 def SendBuffer():
-    global Buffer, LastSent, packagesList
-    while len(Buffer) > 0:
-        # Send a packet only if the efective window is larger than 0
-        if effectiveWindow < 0:
-            log = 'Negative Effective Window'
-            Trace(log)
-            u.logData((time.time() - start_time), log, effectiveWindow, cwnd, rtt, srtt, TOut)
-        else:
-            num = Buffer[0]
-            del Buffer[0]
-            error = '0'
-            if u.isPrime(num):
-                error = '1'
-                log = "Datagram " + str(num) + " lost"
-                u.logData((time.time() - start_time), log, effectiveWindow, cwnd, rtt, srtt, TOut)
-                print(log)
-            datagram = error+'-'+str(num)  # Segment:  errorindicator-seqnum
-            time.sleep(transmition_time)
-            LastSent = num
-            sockt.sendto(datagram.encode(), (HOST, PORT))
-
-            sentAt = (time.time() - start_time)
-            packagesList.append({'num':num,'transmition_time':sentAt})
-
-            log = 'Datagram ' + str(num) + ' sent'
-            u.logData(sentAt, log, effectiveWindow, cwnd, rtt, srtt, TOut)
-            Trace('Sent: ' + datagram)
-            t2 = threading.Thread(target=TimeOut, args=(num,))
-            t2.start()
+    global Buffer, pack_num
+    while (0 <= len(Buffer) < 20):
+        Buffer.append(pack_num)
+        pack_num += 1
 
 
 def Trace(mess):
@@ -143,13 +178,14 @@ def Trace(mess):
     currentTime = time.time()-start_time
     print(currentTime, '|', "'"+mess+"'")
 
+
 u.createLogFile()
 
 t1 = threading.Thread(target=ProcessAck)
 t1.start()
 
-for i in range(30):
-    Buffer.append(i)
+t2 = threading.Thread(target=sendPackage)
+t2.start()
 
 start_time = time.time()
 while time.time()-start_time < LimitTime:

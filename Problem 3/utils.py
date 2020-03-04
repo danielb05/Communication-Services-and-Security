@@ -1,5 +1,6 @@
 logFile = 'log.md'
 
+
 def createLogFile():
     header = "|Time (s)|Event|Eff.Win. (MSS)|cwnd (MSS)|RTT (s)|sRTT (s)|TOut (s)\n"
     secondLine = "|---|---|---|---|---|---|---|\n"
@@ -16,11 +17,12 @@ def logData(t, log, effectiveWindow, cwnd, rtt, srtt, TOut):
         row += "|" + str(effectiveWindow)
         row += "|" + str(cwnd)
         row += "|" + ("%.2f" % rtt)
-        row += "|" + ("%.2f" % srtt) 
+        row += "|" + ("%.2f" % srtt)
         row += "|" + str(TOut)
         row += "\n"
         file.write(row)
         file.close()
+
 
 def isPrime(number):
     if number > 1:
@@ -32,8 +34,20 @@ def isPrime(number):
             return True
     return False
 
+
 def calculateRTT(currentTime, sentTime):
     return currentTime - sentTime
 
+
 def calculateSRTT(alpha, srtt, rtt):
     return alpha * srtt + (1 - alpha) * rtt
+
+
+def calculateEffectiveWindow(cwnd, last_sent, last_ack):
+    return int(cwnd - (last_sent - last_ack))
+
+
+def sortedBuffer(Buffer):
+    if(Buffer and len(Buffer) > 0):
+        Buffer = Buffer.sort(key=lambda x: x[0])
+        return Buffer
