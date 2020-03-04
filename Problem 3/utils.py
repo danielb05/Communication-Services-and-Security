@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt 
+
 logFile = 'log.md'
 
 
@@ -51,3 +53,25 @@ def sortedBuffer(Buffer):
     if(Buffer and len(Buffer) > 0):
         Buffer = Buffer.sort(key=lambda x: x[0])
         return Buffer
+
+
+def plot(times, sRTT, cwnd):
+
+    # plotting the line cwnd points  
+    plt.plot(times, cwnd, label = "Congestion Window (cwnd)") 
+    
+    # plotting the line 2 points  
+    plt.plot(times, sRTT, label = "Estimated RTT (sRTT)") 
+    
+    
+    # naming the x axis 
+    plt.xlabel('Time (s)') 
+
+    # giving a title to my graph 
+    plt.title('cwnd and sRTT as a function of time') 
+    
+    # show a legend on the plot 
+    plt.legend() 
+    
+    # function to show the plot 
+    plt.show() 

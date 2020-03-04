@@ -12,6 +12,8 @@ sockt = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sockt2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sockt2.bind((HOST, PORTACK))
 
+running = True
+
 transmition_time = 1
 MSS = 1
 alpha = 0.8
@@ -23,6 +25,10 @@ TOut = 10
 
 Buffer = []
 RetransBuffer = []
+
+timePlot = []
+srttPlot = []
+cwndPlot = []
 
 cwmax = 4
 cwini = 1
@@ -179,6 +185,14 @@ def Trace(mess):
     print(currentTime, '|', "'"+mess+"'")
 
 
+def getPlotData():
+    global timePlot, srttPlot, cwndPlot
+    while running:
+        timePlot.append(time.time()-start_time)
+        srttPlot.append(srtt)
+        cwndPlot.append(cwnd)
+        time.sleep(1)
+
 u.createLogFile()
 
 t1 = threading.Thread(target=ProcessAck)
@@ -187,6 +201,12 @@ t1.start()
 t2 = threading.Thread(target=sendPackage)
 t2.start()
 
+t3 = threading.Thread(target=getPlotData)
+t3.start()
+
 start_time = time.time()
-while time.time()-start_time < LimitTime:
+while running:
+    running = time.time()-start_time < LimitTime
     SendBuffer()
+
+u.plot(timePlot, srttPlot, cwndPlot)
