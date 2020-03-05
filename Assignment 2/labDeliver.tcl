@@ -97,11 +97,12 @@ for { set index 0 }  { $index < [array size tcp_agents] }  { incr index } {
    $tcp_agents($index) set add793slowstart_ true
    $tcp_agents($index) set window_ 40
 }
-pene
+
 # Node 3: No settings
-$ns queue-limit $n(0) $n(3) 20
-$ns queue-limit $n(1) $n(3) 20
-$ns queue-limit $n(2) $n(3) 20
+#$ns queue-limit $n(0) $n(3) 20
+#$ns queue-limit $n(1) $n(3) 20
+#$ns queue-limit $n(2) $n(3) 20
+$ns queue-limit $n(3) $n(4) 20
 
 # Node 4: 3 Sinks, one for each tcp agent
 # Connect TCP to sinks
@@ -111,7 +112,7 @@ for { set index 0 }  { $index < [array size tcp_agents] }  { incr index } {
     $ns connect $tcp_agents($index) $null($index)
     $tcp_agents($index) attach-trace $nff
 }
-pene
+
 for { set index 0 }  { $index < 20 }  { incr index 2 } {
     set end [expr {$index + 1}]
     $ns at $index "$cbr_i(1) start"
@@ -138,4 +139,4 @@ $ns at 0.0 "recordTCPTimes"
 $ns at 20.0 "finish"
 
 $ns run
-pene
+
