@@ -4,20 +4,31 @@ import threading
 import utils as u
 
 
+# Defining values to the connection between TX and RX
 HOST = 'localhost'
 PORT = 50007
 PORTACK = 50006
 
+# Creates UDP sockets to transfer and receive data between TX and RX
 sockt = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sockt2 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sockt2.bind((HOST, PORTACK))
 
+# Boolean that indicates that the program is still executing
 running = True
 
+# Defining constants
 transmition_time = 1
 MSS = 1
 alpha = 0.8
 LimitTime = 200
+
+# Constant that stores the time of the beginning of execution
+start_time = time.time()
+
+# Variable which will be used to calculate the current time throught the execution
+currentTime = time.time()
+
 
 LastSent = -1
 LastAck = -1
@@ -25,10 +36,6 @@ TOut = 10
 
 Buffer = []
 RetransBuffer = []
-
-timePlot = []
-srttPlot = []
-cwndPlot = []
 
 cwmax = 4
 cwini = 1
@@ -38,11 +45,13 @@ rtt = 11
 srtt = rtt
 srtt = u.calculateSRTT(alpha, srtt, rtt)
 
-currentTime = time.time()
-start_time = time.time()
-
 packagesList = []
 pack_num = 0
+
+# Arrays that store the values to be ploted
+timePlot = []
+srttPlot = []
+cwndPlot = []
 
 
 def ProcessAck():

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 logFile = 'log.md'
 
 
+# Creates 'log.md' file and inserts the header values in the correct format to be displayed as a table
 def createLogFile():
     header = "|Time (s)|Event|Eff.Win. (MSS)|cwnd (MSS)|RTT (s)|sRTT (s)|TOut (s)\n"
     secondLine = "|---|---|---|---|---|---|---|\n"
@@ -12,6 +13,7 @@ def createLogFile():
         file.close()
 
 
+# Prints values to 'log.md' file in the correct format to be displayed as a table
 def logData(t, log, effectiveWindow, cwnd, rtt, srtt, TOut):
     with open(logFile, mode='a', newline='\n') as file:
         row = ("%.2f" % t)
@@ -26,6 +28,7 @@ def logData(t, log, effectiveWindow, cwnd, rtt, srtt, TOut):
         file.close()
 
 
+# Checks if a number is prime (True) or not (False)
 def isPrime(number):
     if number > 1:
         for i in range(2, number):
@@ -37,24 +40,21 @@ def isPrime(number):
     return False
 
 
+# Calculates Round Trip Time (RTT)
 def calculateRTT(currentTime, sentTime):
     return currentTime - sentTime
 
 
+# Calculates Estimated Round Trip Time (sRTT)
 def calculateSRTT(alpha, srtt, rtt):
     return alpha * srtt + (1 - alpha) * rtt
 
-
+# Calculates Effective Window (cwnd)
 def calculateEffectiveWindow(cwnd, last_sent, last_ack):
     return int(cwnd - (last_sent - last_ack))
 
 
-def sortedBuffer(Buffer):
-    if(Buffer and len(Buffer) > 0):
-        Buffer = Buffer.sort(key=lambda x: x[0])
-        return Buffer
-
-
+# Plots the cwnd and sRTT as a function of time 
 def plot(times, sRTT, cwnd):
 
     # plotting the line cwnd points  
