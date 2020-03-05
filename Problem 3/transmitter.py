@@ -26,7 +26,7 @@ LimitTime = 200
 # Constant that stores the time of the beginning of execution
 start_time = time.time()
 
-# Variable which will be used to calculate the current time throught the execution
+# Variable which will be used to calculate the current time throughout the execution
 currentTime = time.time()
 
 
@@ -62,15 +62,15 @@ def ProcessAck():
         num = int(data.split('-')[1])
 
         receivedTime = (time.time() - start_time)
-        # t3 = threading.Thread(target=updateValeus(num, receivedTime))
+        # t3 = threading.Thread(target=updateValues(num, receivedTime))
         # t3.start()
-        updateValeus(num, receivedTime)
+        updateValues(num, receivedTime)
         log = "ACK " + str(num) + " received"
         u.logData(receivedTime, log, effectiveWindow, cwnd, rtt, srtt, TOut)
         Trace("ACK received " + data)
 
 
-def updateValeus(ack_num, receivedTime):
+def updateValues(ack_num, receivedTime):
 
     global cwnd, cwmax, MSS, packagesList, rtt, srtt, TOut, effectiveWindow, LastAck
 
@@ -94,7 +94,7 @@ def updateValeus(ack_num, receivedTime):
 def SendRetransBuffer():
     global TOut, effectiveWindow
     while len(RetransBuffer) > 0:
-        # Send a packet only if the efective window is larger than 0
+        # Send a packet only if the effective window is larger than 0
         if effectiveWindow < 0:
             log = 'Negative Effective Window Retrans'
             # Trace(log)
@@ -139,7 +139,7 @@ def sendPackage():
     while 1:
         if len(Buffer) > 0:
 
-            # Send a packet only if the efective window is larger than 0
+            # Send a packet only if the effective window is larger than 0
             if effectiveWindow < 0:
                 log = 'Negative Effective Window'
                 # Trace(log)
@@ -177,7 +177,7 @@ def sendPackage():
                 t2.start()
 
             else:
-                log = ("Exeeds effectiveWindow")
+                log = ("Exceeds effectiveWindow")
                 LastSent, LastAck, effectiveWindow
 
 

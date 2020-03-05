@@ -1,7 +1,6 @@
 import socket
 import time
 import threading
-from collections import deque
 
 
 HOST = 'localhost'
@@ -28,11 +27,11 @@ def ReceivePackages():
     while 1:
         data, addr = sockt.recvfrom(1024)
         last_received_time = start_time - time.time()
-        t3 = threading.Thread(target=manageIncomming(data))
+        t3 = threading.Thread(target=manageIncoming(data))
         t3.start()
 
 
-def manageIncomming(data):
+def manageIncoming(data):
     global Buffer, BufferList, nextExpected, lastInsertedInBuffer
 
     data = data.decode('ascii')
