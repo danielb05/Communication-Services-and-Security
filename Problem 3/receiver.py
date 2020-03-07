@@ -27,8 +27,8 @@ def ReceivePackages():
     while 1:
         data, addr = sockt.recvfrom(1024)
         last_received_time = start_time - time.time()
-        t3 = threading.Thread(target=manageIncoming(data))
-        t3.start()
+        manageIncoming_thread = threading.Thread(target=manageIncoming(data))
+        manageIncoming_thread.start()
 
 
 def manageIncoming(data):
@@ -75,12 +75,7 @@ def SendAck(ne):
     print("SENT ACK ", ne)
 
 
-t1 = threading.Thread(target=ReceivePackages)
-t1.start()
-
-# ReceivePackages()
-
-# t2 = threading.Thread(target=ManageBuffer())
-# t2.start()
+ReceivePackages_thread = threading.Thread(target=ReceivePackages)
+ReceivePackages_thread.start()
 
 ManageBuffer()

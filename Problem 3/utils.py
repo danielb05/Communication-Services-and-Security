@@ -54,24 +54,82 @@ def calculateEffectiveWindow(cwnd, last_sent, last_ack):
     return int(cwnd - (last_sent - last_ack))
 
 
-# Plots the cwnd and sRTT as a function of time 
-def plot(times, sRTT, cwnd):
+# Plots the cwnd as a function of time 
+def plot_cwnd(times, cwnd):
 
     # plotting the line cwnd points  
-    plt.plot(times, cwnd, label = "Congestion Window (cwnd)") 
-    
-    # plotting the line 2 points  
-    plt.plot(times, sRTT, label = "Estimated RTT (sRTT)") 
-    
+    plt.plot(times, cwnd, color = 'tab:red', label = "Congestion Window (cwnd)")
     
     # naming the x axis 
     plt.xlabel('Time (s)') 
 
+    # naming the y axis 
+    plt.ylabel('cwnd (MSS)') 
+
     # giving a title to my graph 
-    plt.title('cwnd and sRTT as a function of time') 
+    plt.title('cwnd as a function of time') 
     
     # show a legend on the plot 
     plt.legend() 
     
     # function to show the plot 
     plt.show() 
+
+
+# Plots the cwnd and sRTT as a function of time 
+def plot_sRTT(times, sRTT):
+    
+    # plotting the line sRTT points  
+    plt.plot(times, sRTT, label = "Estimated RTT sRTT ") 
+    
+    # naming the x axis 
+    plt.xlabel('Time (s)')
+
+    # naming the y axis 
+    plt.ylabel('sRTT (s)') 
+
+    # giving a title to my graph 
+    plt.title('sRTT as a function of time') 
+    
+    # show a legend on the plot 
+    plt.legend() 
+    
+    # function to show the plot 
+    plt.show() 
+
+
+# Plots the cwnd and sRTT as a function of time 
+def plot(times, sRTT, cwnd):
+        
+    # naming the x axis 
+    plt.xlabel('Time (s)') 
+
+    # giving a title to my graph 
+    plt.title('cwnd and sRTT as a function of time') 
+
+    fig, ax1 = plt.subplots()
+
+    # naming the x axis
+    ax1.set_xlabel('time (s)')
+
+    # cwnd plot
+    color = 'tab:red'
+    ax1.set_ylabel('cwnd (MSS)', color=color)
+    ax1.plot(times, cwnd, color=color, label = "Congestion Window (cwnd)")
+    ax1.tick_params(axis='y', labelcolor=color)
+
+    # sRTT plot
+    ax2 = ax1.twinx()
+    color = 'tab:blue'
+    ax2.set_ylabel('sRTT (s)', color=color)
+    ax2.plot(times, sRTT, color=color, label = "Estimated RTT sRTT ")
+    ax2.tick_params(axis='y', labelcolor=color)
+
+    # otherwise the right y-label is slightly clipped
+    fig.tight_layout()
+
+    # show a legend on the plot 
+    plt.legend() 
+
+    # function to show the plot 
+    plt.show()
