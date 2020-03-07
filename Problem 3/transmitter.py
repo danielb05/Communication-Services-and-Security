@@ -62,7 +62,7 @@ srttPlot = []
 cwndPlot = []
 
 
-# Function ran in a separated thread, responsible for receiving ACK segments from the RX
+# Function ran in a separated thread, responsible for receiving ACK segments from the Receiver
 def ProcessAck():
     global Buffer
 
@@ -169,7 +169,7 @@ def TimeOut(num):
         Trace(log)
         SendRetransBuffer()
 
-# Thread responsible 
+# Thread responsible for sending packages to the receiver
 def sendPackage():
     global Buffer, LastSent, LastAck, packagesList
 
@@ -246,7 +246,7 @@ def getPlotData():
 # Creating File that will contains the table from your output code
 u.createLogFile()
 
-# Creating various threads that will execute the program
+# Creating and starting various threads that will execute the program
 ProcessAck_thread = threading.Thread(target=ProcessAck)
 ProcessAck_thread.start()
 
