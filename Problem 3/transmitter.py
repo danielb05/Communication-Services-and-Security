@@ -2,7 +2,6 @@ import socket
 import time
 import threading
 import utils as u
-import sys
 
 
 # Defining values to the connection between TX and RX
@@ -39,6 +38,9 @@ Buffer = []
 
 # Retransmition Buffer: stores packages lost that will be resend
 RetransBuffer = []
+
+# List of all Retransmitted packages used for Karn/Partridge algorithm
+allRetrans = []
 
 # Various variables used throughout the code
 cwmax = 4
@@ -89,13 +91,15 @@ def updateValues(ack_num, receivedTime):
 
     global cwnd, cwmax, MSS, packagesList, rtt, srtt, TOut, effectiveWindow, LastAck
     
-    # finds the respective package and updates Round Trip Time based on its sending and arrival times    
-    for item in packagesList:        
-        if item['num'] == ack_num:
-            rtt = u.calculateRTT(receivedTime, item['transmition_time'])
+    # checks if its not a retransmition (Karn/Partridge algorithm)
+    if ack_num not in allRetrans:
+        # finds the respective package and updates Round Trip Time based on its sending and arrival times    
+        for item in packagesList:        
+            if item['num'] == ack_num:
+                rtt = u.calculateRTT(receivedTime, item['transmition_time'])
 
-    # Updates Estimated Round Trip Time
-    srtt = u.calculateSRTT(alpha, srtt, rtt)
+        # Updates Estimated Round Trip Time
+        srtt = u.calculateSRTT(alpha, srtt, rtt)
 
     # Updates Congestion Window
     if(cwnd < cwmax):
@@ -127,23 +131,21 @@ def SendRetransBuffer():
             # Selects package to be retransmitted, create its datagram, remove it from the
             # Retransmition Buffer awaits the appropriate transmition time, resends the package
             # and finally add it to the sent packages list
-            num = RetransBuffer[0]
-            datagram = '0-'+str(num)
-            del RetransBuffer[0]
-            time.sleep(transmition_time)
-            sockt.sendto(datagram.encode(), (HOST, PORT))
+            if RetransBuffer:
+                num = RetransBuffer[0]
+                datagram = '0-'+str(num)
+                del RetransBuffer[0]
+                time.sleep(transmition_time)
+                sockt.sendto(datagram.encode(), (HOST, PORT))
 
-            sentAt = (time.time() - start_time)
-            packagesList.append({'num': num, 'transmition_time': sentAt})
+                sentAt = (time.time() - start_time)
+                packagesList.append({'num': num, 'transmition_time': sentAt})
 
-            # When a package is retransmitted, the timeout doubles
-            TOut *= 2
-
-            # Loggin
-            log = 'Sent Retrans: ' + str(num)
-            u.logData((time.time() - start_time), log,
-                      effectiveWindow, cwnd, rtt, srtt, TOut)
-            Trace('Sent Retrans: ' + datagram)
+                # Loggin
+                log = 'Sent Retrans: ' + str(num)
+                u.logData((time.time() - start_time), log,
+                        effectiveWindow, cwnd, rtt, srtt, TOut)
+                Trace('Sent Retrans: ' + datagram)
 
 # Thread created for each sent package. Creates a timeout based in the sent time
 # and takes appropriated action in case of package not being acknowledged
@@ -163,6 +165,7 @@ def TimeOut(num):
         cwmax = max(cwini, (cwmax/2))
 
         RetransBuffer.append(num)
+        allRetrans.append(num)
         log = "TimeOut: " + str(num)
         u.logData((time.time() - start_time), log,
                   effectiveWindow, cwnd, rtt, srtt, TOut)
@@ -270,7 +273,4 @@ while running:
 u.plot(timePlot, srttPlot, cwndPlot)
 u.plot_cwnd(timePlot, cwndPlot)
 u.plot_sRTT(timePlot, srttPlot)
-
-# terminating the execution
-sys.exit()
 

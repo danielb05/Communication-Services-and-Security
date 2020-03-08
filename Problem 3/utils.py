@@ -80,7 +80,7 @@ def plot_cwnd(times, cwnd):
 def plot_sRTT(times, sRTT):
     
     # plotting the line sRTT points  
-    plt.plot(times, sRTT, label = "Estimated RTT sRTT ") 
+    plt.plot(times, sRTT, label = "Estimated RTT (sRTT)") 
     
     # naming the x axis 
     plt.xlabel('Time (s)')
@@ -115,21 +115,23 @@ def plot(times, sRTT, cwnd):
     # cwnd plot
     color = 'tab:red'
     ax1.set_ylabel('cwnd (MSS)', color=color)
-    ax1.plot(times, cwnd, color=color, label = "Congestion Window (cwnd)")
+    ln1 = ax1.plot(times, cwnd, color=color, label = "Congestion Window (cwnd)")
     ax1.tick_params(axis='y', labelcolor=color)
 
     # sRTT plot
     ax2 = ax1.twinx()
     color = 'tab:blue'
     ax2.set_ylabel('sRTT (s)', color=color)
-    ax2.plot(times, sRTT, color=color, label = "Estimated RTT sRTT ")
+    ln2 = ax2.plot(times, sRTT, color=color, label = "Estimated RTT (sRTT)")
     ax2.tick_params(axis='y', labelcolor=color)
 
     # otherwise the right y-label is slightly clipped
     fig.tight_layout()
 
     # show a legend on the plot 
-    plt.legend() 
+    lns = ln1+ln2
+    labs = [l.get_label() for l in lns]
+    ax1.legend(lns, labs, loc=0)
 
     # function to show the plot 
     plt.show()
