@@ -1,15 +1,18 @@
-# Creating topology
-
-puts "      CBR2-TCP2     n2"
-puts "      Vegas          \\"
-puts "                      \\"
-puts "     CBR1-TCP1 n1 ---- n3 -----n4"
-puts "     Reno             /"
-puts "                     /"
-puts "     CBR0-TCP0    n0 "
-puts "     Tahoe"
-
-puts ""
+# TCP Original (RFC 793)
+if {$argc == 2} {
+    set karn   [lindex $argv 0] 
+    set jacobson       [lindex $argv 1] 
+} else {
+    puts "      CBR0-UDP n0"
+    puts "                \\"
+    puts "                 n2 ---- n3"
+    puts "                /"
+    puts "      CBR1-TCP n1 "
+    puts ""
+    puts "  Usage: ns $argv0 karn (true|false) jacobson (true|false)"
+    puts ""
+    exit 1
+}
 
 # Createing the simulator object
 set ns [new Simulator]
@@ -30,7 +33,6 @@ proc finish {} {
         exit 0
 }
 
-# Procedure to record TCP times
 proc recordTCPTimes { } {
 	
 	global ns tcp_agents nff cbr_i
@@ -44,18 +46,17 @@ proc recordTCPTimes { } {
 	$ns at [expr $now+0.1] "recordTCPTimes"
 }
 
-# Logging multiple values
 proc writeAgent { tcp n nff now args } {
     set rtt  [expr [$tcp set rtt_]  * [$tcp set tcpTick_]]
     set srtt  [expr ([$tcp set srtt_] >> [$tcp set T_SRTT_BITS]) * [$tcp set tcpTick_]]
     set rttvar  [expr ([$tcp set rttvar_] >> [$tcp set T_RTTVAR_BITS]) * [$tcp set tcpTick_]]
     set bo [expr [$tcp set backoff_]]
-    set cwnd  [expr [$tcp set cwnd_]]
-    set cwmax  [expr [$tcp set cwmax_]]
-    puts $nff "$n $now $rtt $srtt $cwnd $cwmax [expr 0.5*($bo-1)]"
+    set cw  [expr [$tcp set cwnd_]]
+    set cwmax  [expr [$tcp set maxcwnd_]]
+	puts $nff "$n $now $rtt $srtt $cw $cwmax [expr 0.5*($bo-1)]"
 }
 
-#Create 5 nodes
+#Create 4 nodes
 #
 #  	     n2
 #  	      |
@@ -94,11 +95,8 @@ for { set index 0 }  { $index < [array size tcp_agents] }  { incr index } {
    $tcp_agents($index) set class_ $index
    $tcp_agents($index) set tcpTick_ 0.01
    $tcp_agents($index) set add793slowstart_ true
-   $tcp_agents($index) set cwmax_ 40
+   $tcp_agents($index) set window_ 40
 }
-
-$tcp_agents(2) set v_alpha_ 3
-$tcp_agents(2) set v_beta_ 6
 
 # Node 3: No settings
 #$ns queue-limit $n(0) $n(3) 20
@@ -141,5 +139,4 @@ $ns at 0.0 "recordTCPTimes"
 $ns at 20.0 "finish"
 
 $ns run
-
 

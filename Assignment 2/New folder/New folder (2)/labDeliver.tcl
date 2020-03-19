@@ -50,9 +50,9 @@ proc writeAgent { tcp n nff now args } {
     set srtt  [expr ([$tcp set srtt_] >> [$tcp set T_SRTT_BITS]) * [$tcp set tcpTick_]]
     set rttvar  [expr ([$tcp set rttvar_] >> [$tcp set T_RTTVAR_BITS]) * [$tcp set tcpTick_]]
     set bo [expr [$tcp set backoff_]]
-    set cwnd  [expr [$tcp set cwnd_]]
+    set cw  [expr [$tcp set cwnd_]]
     set cwmax  [expr [$tcp set cwmax_]]
-    puts $nff "$n $now $rtt $srtt $cwnd $cwmax [expr 0.5*($bo-1)]"
+	puts $nff "$n $now $rtt $srtt $cw $cwmax [expr 0.5*($bo-1)]"
 }
 
 #Create 5 nodes
@@ -97,9 +97,6 @@ for { set index 0 }  { $index < [array size tcp_agents] }  { incr index } {
    $tcp_agents($index) set cwmax_ 40
 }
 
-$tcp_agents(2) set v_alpha_ 3
-$tcp_agents(2) set v_beta_ 6
-
 # Node 3: No settings
 #$ns queue-limit $n(0) $n(3) 20
 #$ns queue-limit $n(1) $n(3) 20
@@ -141,5 +138,4 @@ $ns at 0.0 "recordTCPTimes"
 $ns at 20.0 "finish"
 
 $ns run
-
 
